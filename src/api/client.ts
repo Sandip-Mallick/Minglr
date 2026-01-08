@@ -3,6 +3,7 @@ import { secureStorage } from '../utils/secureStorage';
 
 // Get API URL from Expo environment variables (must use EXPO_PUBLIC_ prefix)
 // Fallback to production URL if env var is not set (safer for production builds)
+// Build timestamp: 2026-01-08T18:28 - Force rebuild for env var pickup
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://minglr-backend.onrender.com/api/v1';
 
 // Debug: Log the API URL only in development
