@@ -208,8 +208,8 @@ export const Input: React.FC<InputProps> = ({
                             paddingHorizontal: spacing.base,
                             paddingVertical: spacing.md,
                         },
-                        leftIcon && { paddingLeft: spacing.sm },
-                        (showPasswordToggle || rightIcon) && { paddingRight: spacing.sm },
+                        leftIcon ? { paddingLeft: spacing.sm } : undefined,
+                        (showPasswordToggle || rightIcon) ? { paddingRight: spacing.sm } : undefined,
                     ]}
                     placeholderTextColor={colors.textMuted}
                     value={shouldUseCustomMasking ? displayValue : value}
