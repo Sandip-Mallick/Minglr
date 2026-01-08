@@ -9,12 +9,18 @@
             "distribution": "internal"
         },
         "preview": {
+            "env": {
+                "EXPO_PUBLIC_API_BASE_URL": "https://minglr-backend.onrender.com/api/v1"
+            },
             "distribution": "internal",
             "android": {
                 "buildType": "apk"
             }
         },
         "production": {
+            "env": {
+                "EXPO_PUBLIC_API_BASE_URL": "https://minglr-backend.onrender.com/api/v1"
+            },
             "android": {
                 "buildType": "apk"
             }

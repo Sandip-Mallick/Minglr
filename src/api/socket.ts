@@ -3,16 +3,17 @@ import { secureStorage } from '../utils/secureStorage';
 import { ChatMessage } from './chats';
 
 // Socket server URL - extract just the origin (protocol://host:port) from API URL
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.29.213:3000/api';
+// Fallback to production URL if env var is not set (safer for production builds)
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://minglr-backend.onrender.com/api/v1';
 // Parse URL to get just the origin without any path
 const getSocketUrl = (apiUrl: string): string => {
     try {
         const url = new URL(apiUrl);
         return url.origin; // Returns protocol://host:port
     } catch {
-        // Fallback: strip everything after port
+        // Fallback: strip everything after port (use production URL as default)
         const match = apiUrl.match(/^(https?:\/\/[^\/]+)/);
-        return match ? match[1] : 'http://192.168.29.213:3000';
+        return match ? match[1] : 'https://minglr-backend.onrender.com';
     }
 };
 const SOCKET_URL = getSocketUrl(API_BASE_URL);

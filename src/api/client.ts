@@ -2,7 +2,8 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { secureStorage } from '../utils/secureStorage';
 
 // Get API URL from Expo environment variables (must use EXPO_PUBLIC_ prefix)
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.29.213:3000/api';
+// Fallback to production URL if env var is not set (safer for production builds)
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://minglr-backend.onrender.com/api/v1';
 
 // Debug: Log the API URL only in development
 if (__DEV__) {
