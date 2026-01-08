@@ -5,6 +5,9 @@ services:
     buildCommand: npm install && npx expo export -p web
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: false
+    envVars:
+      - key: EXPO_PUBLIC_API_BASE_URL
+        value: https://minglr-backend.onrender.com/api/v1
     headers:
       - path: /*
         name: Cache-Control
