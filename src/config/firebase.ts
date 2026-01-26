@@ -17,16 +17,26 @@ import {
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Firebase configuration - hardcoded values from .env
-// In production, you would use a proper env config library like react-native-dotenv
+// Firebase configuration from environment variables
+// These are set in eas.json for builds and can be overridden locally
 const firebaseConfig = {
-    apiKey: 'AIzaSyAbQqLHnqxxrslJ7bDc8YVXs1CLejqKZRY',
-    authDomain: 'minglr-1.firebaseapp.com',
-    projectId: 'minglr-1',
-    storageBucket: 'minglr-1.firebasestorage.app',
-    messagingSenderId: '259971691056',
-    appId: '1:259971691056:android:your-app-id', // Update with your actual appId from Firebase
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
 };
+
+// Validate Firebase config in development
+if (__DEV__) {
+    const missingKeys = Object.entries(firebaseConfig)
+        .filter(([_, value]) => !value)
+        .map(([key]) => key);
+    if (missingKeys.length > 0) {
+        console.warn('[Firebase] Missing config keys:', missingKeys.join(', '));
+    }
+}
 
 // Initialize Firebase
 let app: FirebaseApp;
