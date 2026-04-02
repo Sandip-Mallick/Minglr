@@ -14,18 +14,23 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { useTheme, ThemeMode } from '../../theme';
 import { useAuthStore } from '../../store';
 
 // URLs for legal pages
 const URLS = {
-    TERMS: 'https://mingler.app/terms',
-    PRIVACY: 'https://mingler.app/privacy',
-    COMMUNITY: 'https://mingler.app/community-guidelines',
+    TERMS: 'https://mingler-privacy.netlify.app/terms',
+    PRIVACY: 'https://mingler-privacy.netlify.app/',
+    COMMUNITY: 'https://mingler-privacy.netlify.app/community',
+    DELETE_ACCOUNT: 'https://mingler-privacy.netlify.app/delete-account',
 };
 
-const APP_VERSION = '4.4.5';
-const SUPPORT_EMAIL = 'dev.sandip999@gmail.com';
+// Dynamic app version from app.json / Constants
+const APP_VERSION = Constants.expoConfig?.version ?? Constants.manifest?.version ?? '1.0.0';
+// Android OS version from the device
+const ANDROID_VERSION = Platform.OS === 'android' ? `${Platform.Version}` : null;
+const SUPPORT_EMAIL = 'minglersupport@gmail.com';
 
 interface BlockedUser {
     _id: string;
@@ -93,24 +98,24 @@ const SettingsScreen: React.FC = () => {
 
     // Handle contact support
     const contactSupport = async () => {
-        const platform = Platform.OS === 'ios'
-            ? `iOS Version (iOS ${Platform.Version})`
+        const platformInfo = Platform.OS === 'ios'
+            ? `iOS ${Platform.Version}`
             : Platform.OS === 'android'
-                ? `Android Version (Android ${Platform.Version})`
+                ? `Android ${Platform.Version}`
                 : 'Web';
 
-        const userId = user?._id || 'Unknown';
+        const minglerId = user?._id || 'Unknown';
 
         const body = `
 
 ---------------------
 Don't edit below this line 👀
 
-mingler ID: ${userId}
-platform: ${platform}
-mingler Version: ${APP_VERSION}`;
+Mingler ID: ${minglerId}
+Platform: ${platformInfo}
+App Version: ${APP_VERSION}`;
 
-        const subject = 'mingler Support Request';
+        const subject = 'Mingler Support Request';
         const mailtoUrl = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
         try {
@@ -144,12 +149,19 @@ mingler Version: ${APP_VERSION}`;
         }
     };
 
-    // Handle delete account (placeholder)
+    // Handle delete account
     const handleDeleteAccount = () => {
         Alert.alert(
             'Delete Account',
-            'This feature is coming soon. Please contact support if you need to delete your account.',
-            [{ text: 'OK' }]
+            'This will take you to our account deletion page where you can request permanent deletion of your account and all associated data. This action cannot be undone.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Continue',
+                    style: 'destructive',
+                    onPress: () => openURL(URLS.DELETE_ACCOUNT),
+                },
+            ]
         );
     };
 
@@ -311,9 +323,21 @@ mingler Version: ${APP_VERSION}`;
                 </View>
 
                 {/* Version Info */}
-                <Text style={[styles.versionText, { color: colors.textMuted }]}>
-                    mingler v{APP_VERSION}
-                </Text>
+                <View style={styles.versionContainer}>
+                    <Text style={[styles.versionText, { color: colors.textMuted }]}>
+                        Mingler v{APP_VERSION}
+                    </Text>
+                    {ANDROID_VERSION && (
+                        <Text style={[styles.versionSubText, { color: colors.textMuted }]}>
+                            Android {ANDROID_VERSION}
+                        </Text>
+                    )}
+                    {user?._id && (
+                        <Text style={[styles.versionSubText, { color: colors.textMuted }]}>
+                            ID: {user._id}
+                        </Text>
+                    )}
+                </View>
 
                 <View style={{ height: 40 }} />
             </ScrollView>
@@ -489,10 +513,19 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
     },
+    versionContainer: {
+        alignItems: 'center',
+        marginTop: 24,
+        gap: 4,
+    },
     versionText: {
         textAlign: 'center',
         fontSize: 13,
-        marginTop: 24,
+    },
+    versionSubText: {
+        textAlign: 'center',
+        fontSize: 11,
+        opacity: 0.7,
     },
     // Modal styles
     modalOverlay: {
