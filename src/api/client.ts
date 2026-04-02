@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { secureStorage } from '../utils/secureStorage';
 
 // Get API URL from Expo environment variables
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://mingler-backend.onrender.com/api/v1';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://minglr-backend.onrender.com/api/v1';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({

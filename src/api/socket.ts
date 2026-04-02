@@ -5,7 +5,7 @@ import { logger } from '../utils/logger';
 
 // Socket server URL - extract just the origin (protocol://host:port) from API URL
 // Fallback to production URL if env var is not set (safer for production builds)
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://mingler-backend.onrender.com/api/v1';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://minglr-backend.onrender.com/api/v1';
 // Parse URL to get just the origin without any path
 const getSocketUrl = (apiUrl: string): string => {
     try {
@@ -14,7 +14,7 @@ const getSocketUrl = (apiUrl: string): string => {
     } catch {
         // Fallback: strip everything after port (use production URL as default)
         const match = apiUrl.match(/^(https?:\/\/[^\/]+)/);
-        return match ? match[1] : 'https://mingler-backend.onrender.com';
+        return match ? match[1] : 'https://minglr-backend.onrender.com';
     }
 };
 const SOCKET_URL = getSocketUrl(API_BASE_URL);
