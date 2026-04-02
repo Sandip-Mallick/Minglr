@@ -11,12 +11,12 @@
         "preview": {
             "env": {
                 "EXPO_PUBLIC_API_BASE_URL": "https://minglr-backend.onrender.com/api/v1",
-                "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAbQqLHnqxxrslJ7bDc8YVXs1CLejqKZRY",
-                "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "minglr-1.firebaseapp.com",
-                "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "minglr-1",
-                "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "minglr-1.firebasestorage.app",
-                "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "259971691056",
-                "EXPO_PUBLIC_FIREBASE_APP_ID": "1:259971691056:android:your-app-id"
+                "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyCXegYNlduTqg1noMV4LDi-MoIDlzAiW8o",
+                "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "mingler-61ecd.firebaseapp.com",
+                "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "mingler-61ecd",
+                "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "mingler-61ecd.firebasestorage.app",
+                "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "7132256653",
+                "EXPO_PUBLIC_FIREBASE_APP_ID": "1:7132256653:web:2ce825c61d31aac29985c4"
             },
             "distribution": "internal",
             "android": {
@@ -26,12 +26,12 @@
         "production": {
             "env": {
                 "EXPO_PUBLIC_API_BASE_URL": "https://minglr-backend.onrender.com/api/v1",
-                "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAbQqLHnqxxrslJ7bDc8YVXs1CLejqKZRY",
-                "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "minglr-1.firebaseapp.com",
-                "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "minglr-1",
-                "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "minglr-1.firebasestorage.app",
-                "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "259971691056",
-                "EXPO_PUBLIC_FIREBASE_APP_ID": "1:259971691056:android:your-app-id"
+                "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyCXegYNlduTqg1noMV4LDi-MoIDlzAiW8o",
+                "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "mingler-61ecd.firebaseapp.com",
+                "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "mingler-61ecd",
+                "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "mingler-61ecd.firebasestorage.app",
+                "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "7132256653",
+                "EXPO_PUBLIC_FIREBASE_APP_ID": "1:7132256653:web:2ce825c61d31aac29985c4"
             },
             "android": {
                 "buildType": "apk"

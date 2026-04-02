@@ -137,8 +137,8 @@ const ChatsScreen: React.FC = () => {
             setChatList(validChats);
             setChats(validChats);
             setHasFriends(friendsData.length > 0);
-        } catch (error) {
-            console.error('Failed to load chats:', error);
+        } catch {
+            // Silently fail
         } finally {
             setLoading(false);
             setInitialLoadDone(true);
@@ -160,8 +160,8 @@ const ChatsScreen: React.FC = () => {
             setChatList(validChats);
             setChats(validChats);
             setHasFriends(friendsData.length > 0);
-        } catch (error) {
-            console.error('Failed to load chats:', error);
+        } catch {
+            // Silently fail
         }
     };
 

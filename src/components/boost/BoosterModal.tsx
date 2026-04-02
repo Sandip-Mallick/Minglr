@@ -68,8 +68,8 @@ export const BoosterModal: React.FC<BoosterModalProps> = ({
                 boostersOwned: status.boostersOwned,
                 activeBoost: status.activeBoost || null,
             });
-        } catch (error) {
-            console.error('Failed to fetch boost status:', error);
+        } catch {
+            // Silently fail
         }
     };
 
@@ -92,8 +92,8 @@ export const BoosterModal: React.FC<BoosterModalProps> = ({
                 gemsBalance: result.newGemsBalance,
                 boostersOwned: result.newBoostersOwned,
             });
-        } catch (error) {
-            console.error('Failed to purchase boosters:', error);
+        } catch {
+            // Silently fail
         } finally {
             setLoading(false);
         }
@@ -115,8 +115,8 @@ export const BoosterModal: React.FC<BoosterModalProps> = ({
                 },
             });
             onBoostActivated();
-        } catch (error) {
-            console.error('Failed to activate boost:', error);
+        } catch {
+            // Silently fail
         } finally {
             setLoading(false);
         }

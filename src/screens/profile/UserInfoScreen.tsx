@@ -25,8 +25,8 @@ const UserInfoScreen: React.FC = () => {
         try {
             const data = await usersApi.getUser(route.params.userId);
             setUser(data);
-        } catch (error) {
-            console.error('Failed to load user:', error);
+        } catch {
+            // Silently fail
         } finally {
             setLoading(false);
         }

@@ -79,8 +79,8 @@ export const SearchPreferencesModal: React.FC<SearchPreferencesModalProps> = ({
             });
             onSave?.();
             onClose();
-        } catch (error) {
-            console.error('Failed to save preferences:', error);
+        } catch {
+            // Silently fail \u2014 preferences not saved
         }
     };
 

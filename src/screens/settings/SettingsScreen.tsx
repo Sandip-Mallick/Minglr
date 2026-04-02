@@ -19,9 +19,9 @@ import { useAuthStore } from '../../store';
 
 // URLs for legal pages
 const URLS = {
-    TERMS: 'https://minglr.app/terms',
-    PRIVACY: 'https://minglr.app/privacy',
-    COMMUNITY: 'https://minglr.app/community-guidelines',
+    TERMS: 'https://mingler.app/terms',
+    PRIVACY: 'https://mingler.app/privacy',
+    COMMUNITY: 'https://mingler.app/community-guidelines',
 };
 
 const APP_VERSION = '4.4.5';
@@ -106,11 +106,11 @@ const SettingsScreen: React.FC = () => {
 ---------------------
 Don't edit below this line 👀
 
-minglr ID: ${userId}
+mingler ID: ${userId}
 platform: ${platform}
-Minglr Version: ${APP_VERSION}`;
+mingler Version: ${APP_VERSION}`;
 
-        const subject = 'Minglr Support Request';
+        const subject = 'mingler Support Request';
         const mailtoUrl = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
         try {
@@ -122,20 +122,26 @@ Minglr Version: ${APP_VERSION}`;
 
     // Handle logout
     const handleLogout = () => {
-        Alert.alert(
-            'Logout',
-            'Are you sure you want to logout?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Logout',
-                    style: 'destructive',
-                    onPress: async () => {
-                        await logout();
-                    }
-                },
-            ]
-        );
+        if (Platform.OS === 'web') {
+            if (window.confirm('Are you sure you want to logout?')) {
+                logout();
+            }
+        } else {
+            Alert.alert(
+                'Logout',
+                'Are you sure you want to logout?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Logout',
+                        style: 'destructive',
+                        onPress: async () => {
+                            await logout();
+                        }
+                    },
+                ]
+            );
+        }
     };
 
     // Handle delete account (placeholder)
@@ -306,7 +312,7 @@ Minglr Version: ${APP_VERSION}`;
 
                 {/* Version Info */}
                 <Text style={[styles.versionText, { color: colors.textMuted }]}>
-                    Minglr v{APP_VERSION}
+                    mingler v{APP_VERSION}
                 </Text>
 
                 <View style={{ height: 40 }} />

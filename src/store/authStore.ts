@@ -1,6 +1,10 @@
 import { create } from 'zustand';
+import { Platform } from 'react-native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { secureStorage } from '../utils/secureStorage';
 import { usersApi } from '../api/users';
+import { authApi } from '../api/auth';
+import firebaseAuth from '../config/firebase';
 
 interface User {
     _id: string;
@@ -50,6 +54,7 @@ interface AuthState {
     // Actions
     setAuth: (user: User, accessToken: string, refreshToken: string) => Promise<void>;
     logout: () => Promise<void>;
+    forceLogout: () => Promise<void>;
     updateUser: (userData: Partial<User>) => Promise<void>;
     setLoading: (loading: boolean) => void;
     loadStoredAuth: () => Promise<void>;
@@ -78,15 +83,68 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     logout: async () => {
+        // Step 1: Tell backend to update online status (fail silently if network drops)
+        try {
+            await authApi.logout();
+        } catch (e) {
+            console.warn('Backend logout failed:', e);
+        }
+
+        // Step 2: Sign out of Firebase (this fixes Web App persistence!)
+        try {
+            await firebaseAuth.signOut();
+        } catch (e) {
+            console.warn('Firebase signout failed:', e);
+        }
+
+        // Step 3: Sever Native Google OAuth bindings (Mobile only)
+        if (Platform.OS !== 'web') {
+            try {
+                await GoogleSignin.signOut();
+            } catch (e) {
+                // Not signed into Google directly or it failed
+                console.warn('GoogleSignin signout failed:', e);
+            }
+        }
+
+        // Step 4: Clear local device storage
         await secureStorage.deleteItemAsync('accessToken');
         await secureStorage.deleteItemAsync('refreshToken');
         await secureStorage.deleteItemAsync('user');
 
+        // Step 5: Clear runtime UI state
         set({
             isAuthenticated: false,
             user: null,
             accessToken: null,
             refreshToken: null,
+        });
+    },
+
+    /**
+     * Force logout — clears all state, storage, AND signs out of Firebase.
+     * Called by the API client when token refresh fails.
+     */
+    forceLogout: async () => {
+        // Clear secure storage
+        await secureStorage.deleteItemAsync('accessToken');
+        await secureStorage.deleteItemAsync('refreshToken');
+        await secureStorage.deleteItemAsync('user');
+
+        // Sign out of Firebase
+        try {
+            await firebaseAuth.signOut();
+        } catch {
+            // Ignore Firebase sign-out errors during force logout
+        }
+
+        // Clear Zustand state
+        set({
+            isAuthenticated: false,
+            user: null,
+            accessToken: null,
+            refreshToken: null,
+            isLoading: false,
         });
     },
 
@@ -124,8 +182,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             } else {
                 set({ isLoading: false });
             }
-        } catch (error) {
-            console.error('Failed to load auth:', error);
+        } catch {
             set({ isLoading: false });
         }
     },
@@ -139,8 +196,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 set({ user: updatedUser });
                 await secureStorage.setItemAsync('user', JSON.stringify(updatedUser));
             }
-        } catch (error) {
-            console.error('Failed to refresh user:', error);
+        } catch {
+            // Silently fail — user will see stale data until next refresh
         }
     },
 }));

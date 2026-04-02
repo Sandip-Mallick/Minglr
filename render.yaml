@@ -1,13 +1,13 @@
 services:
   - type: web
-    name: minglr-web
+    name: mingler-web
     runtime: static
-    buildCommand: echo "Build ID $(date +%s)" && npm install && EXPO_PUBLIC_API_BASE_URL=https://minglr-backend.onrender.com/api/v1 npx expo export -p web
+    buildCommand: echo "Build ID $(date +%s)" && npm install && EXPO_PUBLIC_API_BASE_URL=https://mingler-backend.onrender.com/api/v1 npx expo export -p web
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: false
     envVars:
       - key: EXPO_PUBLIC_API_BASE_URL
-        value: https://minglr-backend.onrender.com/api/v1
+        value: https://mingler-backend.onrender.com/api/v1
       - key: NODE_ENV
         value: production
     headers:

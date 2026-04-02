@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert, Keyboard, TouchableOpacity, Image, Dimensions, Animated } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, Keyboard, TouchableOpacity, Image, Dimensions, Animated, Easing } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
@@ -45,6 +46,14 @@ const SwipeScreen: React.FC = () => {
     const backgroundScale = useRef(new Animated.Value(1)).current;
     const backgroundTranslateY = useRef(new Animated.Value(0)).current;
 
+    // Empty state animations
+    const emptyFadeIn = useRef(new Animated.Value(0)).current;
+    const emptyScale = useRef(new Animated.Value(0.9)).current;
+    const emptyPulse = useRef(new Animated.Value(1)).current;
+
+    // Race condition guard for prefetch
+    const isFetchingRef = useRef(false);
+
     useEffect(() => {
         if (showSearchPreferences) {
             Animated.parallel([
@@ -89,8 +98,8 @@ const SwipeScreen: React.FC = () => {
                 referralCode: balance.referralCode,
                 referralCount: balance.referralCount,
             });
-        } catch (error) {
-            console.error('Failed to fetch gems/boost status:', error);
+        } catch {
+            // Silently fail — gems/boost UI will show stale data
         }
     }, [syncFromUser]);
 
@@ -104,6 +113,48 @@ const SwipeScreen: React.FC = () => {
 
     // Get user's main photo for booster modal
     const userMainPhoto = currentUser?.photos?.find(p => p.isMain)?.url || currentUser?.photos?.[0]?.url;
+    // Trigger empty state animations when no profiles
+    const isEmptyState = !loading && (profiles.length === 0 || currentIndex >= profiles.length);
+    useEffect(() => {
+        if (isEmptyState) {
+            // Entrance animation
+            Animated.parallel([
+                Animated.timing(emptyFadeIn, {
+                    toValue: 1,
+                    duration: 600,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(emptyScale, {
+                    toValue: 1,
+                    friction: 8,
+                    tension: 40,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+
+            // Continuous subtle pulse on the icon
+            Animated.loop(
+                Animated.sequence([
+                    Animated.timing(emptyPulse, {
+                        toValue: 1.08,
+                        duration: 1200,
+                        easing: Easing.inOut(Easing.ease),
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(emptyPulse, {
+                        toValue: 1,
+                        duration: 1200,
+                        easing: Easing.inOut(Easing.ease),
+                        useNativeDriver: true,
+                    }),
+                ])
+            ).start();
+        } else {
+            emptyFadeIn.setValue(0);
+            emptyScale.setValue(0.9);
+            emptyPulse.setValue(1);
+        }
+    }, [isEmptyState]);
 
     useEffect(() => {
         loadProfiles();
@@ -116,7 +167,7 @@ const SwipeScreen: React.FC = () => {
         }
     }, [currentIndex, profiles.length]);
 
-    const loadProfiles = async () => {
+    const loadProfiles = useCallback(async () => {
         try {
             setLoading(true);
             const data = await swipesApi.getProfiles(20);
@@ -125,28 +176,37 @@ const SwipeScreen: React.FC = () => {
                 : data;
             setProfiles(filteredData);
             setCurrentIndex(0);
-        } catch (error) {
-            console.error('Failed to load profiles:', error);
+        } catch {
+            // Silently fail — empty state will show
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUser]);
 
-    const prefetchMoreProfiles = async () => {
+    const prefetchMoreProfiles = useCallback(async () => {
+        // Guard against concurrent prefetch calls
+        if (isFetchingRef.current) return;
+        isFetchingRef.current = true;
+
         try {
             const data = await swipesApi.getProfiles(20);
             const filteredData = currentUser
                 ? data.filter(profile => profile._id !== currentUser._id)
                 : data;
-            const existingIds = new Set(profiles.map(p => p._id));
-            const newProfiles = filteredData.filter(p => !existingIds.has(p._id));
-            if (newProfiles.length > 0) {
-                setProfiles(prev => [...prev, ...newProfiles]);
-            }
-        } catch (error) {
-            console.error('Failed to prefetch profiles:', error);
+            setProfiles(prev => {
+                const existingIds = new Set(prev.map(p => p._id));
+                const newProfiles = filteredData.filter(p => !existingIds.has(p._id));
+                if (newProfiles.length > 0) {
+                    return [...prev, ...newProfiles];
+                }
+                return prev;
+            });
+        } catch {
+            // Silently fail — existing profiles remain
+        } finally {
+            isFetchingRef.current = false;
         }
-    };
+    }, [currentUser]);
 
     const handleSwipe = async (action: 'like' | 'dislike') => {
         const currentProfile = profiles[currentIndex];
@@ -184,7 +244,6 @@ const SwipeScreen: React.FC = () => {
                         return;
                     }
                 }
-                console.error('Friend request failed:', error);
                 Alert.alert('Error', 'Failed to send friend request.');
             }
         } else {
@@ -192,8 +251,8 @@ const SwipeScreen: React.FC = () => {
             setCurrentIndex(prev => prev + 1);
             try {
                 await swipesApi.swipe(currentProfile._id, 'dislike');
-            } catch (error) {
-                console.error('Swipe failed:', error);
+            } catch {
+                // Silently fail — swipe still progresses visually
             }
         }
     };
@@ -223,7 +282,7 @@ const SwipeScreen: React.FC = () => {
                     return;
                 }
             }
-            console.error('Undo failed:', error);
+            // Silently fail for other undo errors
         }
     };
 
@@ -278,7 +337,7 @@ const SwipeScreen: React.FC = () => {
 
             <View style={styles.headerLogoContainer}>
                 <Image
-                    source={require('../../../assets/Logo/Minglr.png')}
+                    source={require('../../../assets/Logo/mingler.png')}
                     style={styles.headerLogo}
                     resizeMode="contain"
                 />
@@ -320,14 +379,14 @@ const SwipeScreen: React.FC = () => {
 
     if (profiles.length === 0 || currentIndex >= profiles.length) {
         return (
-            <View style={styles.rootContainer}>
+            <View style={[styles.rootContainer, { backgroundColor: '#FFFFFF' }]}>
                 {showSearchPreferences && <View style={styles.darkOverlay} />}
 
                 <Animated.View
                     style={[
                         styles.container,
                         {
-                            backgroundColor: colors.background,
+                            backgroundColor: '#FFFFFF',
                             transform: [
                                 { scale: backgroundScale },
                                 { translateY: backgroundTranslateY },
@@ -339,40 +398,92 @@ const SwipeScreen: React.FC = () => {
                 >
                     {renderHeader()}
 
-                    <View style={styles.emptyCardContainer}>
+                    <Animated.View
+                        style={[
+                            styles.emptyCardContainer,
+                            {
+                                opacity: emptyFadeIn,
+                                transform: [{ scale: emptyScale }],
+                            }
+                        ]}
+                    >
                         <View style={[
                             styles.emptyCard,
                             {
-                                backgroundColor: isDark ? colors.surface : '#E8E8E8',
+                                backgroundColor: '#111111',
                                 borderRadius: borderRadius.xl,
+                                borderWidth: 1,
+                                borderColor: '#1A1A1A',
                             }
                         ]}>
-                            <View style={[
-                                styles.emptyIconContainer,
+                            {/* Pulsing icon with glow ring */}
+                            <Animated.View
+                                style={[
+                                    styles.emptyIconContainer,
+                                    {
+                                        backgroundColor: `${primary.main}12`,
+                                        borderRadius: borderRadius.full,
+                                        marginBottom: spacing.xl,
+                                        transform: [{ scale: emptyPulse }],
+                                    }
+                                ]}
+                            >
+                                <View style={[
+                                    styles.emptyIconInner,
+                                    {
+                                        backgroundColor: `${primary.main}20`,
+                                        borderRadius: borderRadius.full,
+                                    }
+                                ]}>
+                                    <Ionicons name="search-outline" size={40} color={primary.main} />
+                                </View>
+                            </Animated.View>
+
+                            <Text style={[
+                                typography.h2,
                                 {
-                                    backgroundColor: isDark ? colors.elevated : '#D0D0D0',
-                                    borderRadius: borderRadius.full,
-                                    marginBottom: spacing.base,
+                                    color: '#FFFFFF',
+                                    marginTop: spacing.base,
+                                    letterSpacing: 0.5,
                                 }
                             ]}>
-                                <Ionicons name="person-outline" size={48} color={colors.textMuted} />
-                            </View>
-                            <Text style={[typography.h3, { color: colors.text, marginTop: spacing.base }]}>
                                 No Profiles Found
                             </Text>
                             <Text style={[
                                 typography.body,
                                 {
-                                    color: colors.textSecondary,
+                                    color: '#666666',
                                     textAlign: 'center',
                                     paddingHorizontal: spacing['2xl'],
                                     marginTop: spacing.sm,
+                                    lineHeight: 22,
                                 }
                             ]}>
                                 Try adjusting your preferences or check back later
                             </Text>
+
+                            {/* Refresh button */}
+                            <TouchableOpacity
+                                style={[
+                                    styles.emptyRefreshButton,
+                                    {
+                                        backgroundColor: `${primary.main}15`,
+                                        borderRadius: borderRadius.button,
+                                        marginTop: spacing['2xl'],
+                                        paddingHorizontal: spacing.xl,
+                                        paddingVertical: spacing.md,
+                                    }
+                                ]}
+                                onPress={loadProfiles}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="refresh-outline" size={18} color={primary.main} style={{ marginRight: spacing.xs }} />
+                                <Text style={[typography.label, { color: primary.main }]}>
+                                    Refresh
+                                </Text>
+                            </TouchableOpacity>
                         </View>
-                    </View>
+                    </Animated.View>
 
                     {/* Booster Button - positioned at bottom right */}
                     <View style={styles.boosterButtonContainer}>
@@ -413,7 +524,7 @@ const SwipeScreen: React.FC = () => {
                 style={[
                     styles.container,
                     {
-                        backgroundColor: colors.background,
+                        backgroundColor: '#FFFFFF',
                         transform: [
                             { scale: backgroundScale },
                             { translateY: backgroundTranslateY },
@@ -465,16 +576,27 @@ const SwipeScreen: React.FC = () => {
                                             borderRadius: borderRadius.xl,
                                         }
                                     ]}>
-                                        {profile.photos[0]?.url && (
+                                        {profile.photos[0]?.url ? (
                                             <Image
                                                 source={{ uri: profile.photos[0].url }}
                                                 style={styles.previewPhoto}
                                                 resizeMode="cover"
                                             />
+                                        ) : (
+                                            <View style={[styles.previewPhoto, { backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }]}>
+                                                <Ionicons name="person" size={64} color="rgba(255,255,255,0.4)" />
+                                            </View>
                                         )}
-                                        <View style={[styles.previewUserInfo, { top: spacing['2xl'], left: spacing.base }]}>
-                                            <Text style={[typography.h3, styles.previewUserName]}>
-                                                {profile.name}
+
+                                        <LinearGradient
+                                            colors={['rgba(0,0,0,0.85)', 'rgba(0,0,0,0.4)', 'transparent']}
+                                            locations={[0, 0.6, 1]}
+                                            style={styles.previewTopGradient}
+                                        />
+
+                                        <View style={[styles.previewUserInfo, { top: 24, left: 20 }]}>
+                                            <Text style={[typography.h3, styles.previewUserName]} numberOfLines={1}>
+                                                @{profile.name}
                                             </Text>
                                             <View style={[
                                                 styles.previewCountryBadge,
@@ -532,11 +654,11 @@ const SwipeScreen: React.FC = () => {
 const styles = StyleSheet.create({
     rootContainer: {
         flex: 1,
-        backgroundColor: '#000000',
+        backgroundColor: '#FFFFFF',
     },
     darkOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#000000',
+        backgroundColor: 'rgba(0,0,0,0.5)',
     },
     container: {
         flex: 1,
@@ -577,28 +699,43 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 80,
+        marginBottom: 20,
+        marginTop: 10,
     },
     stackCard: {
         position: 'absolute',
+        width: SCREEN_WIDTH - CARD_MARGIN * 2,
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     previewCard: {
-        width: SCREEN_WIDTH - CARD_MARGIN * 2,
-        height: SCREEN_HEIGHT * 0.78,
+        width: '100%',
+        height: '100%',
         overflow: 'hidden',
     },
     previewPhoto: {
         width: '100%',
         height: '100%',
     },
+    previewTopGradient: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 120,
+        zIndex: 1,
+    },
     previewUserInfo: {
         position: 'absolute',
+        zIndex: 2,
     },
     previewUserName: {
         color: '#FFFFFF',
-        textShadowColor: 'rgba(0,0,0,0.5)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 3,
+        fontWeight: '800',
+        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
     },
     previewCountryBadge: {
         flexDirection: 'row',
@@ -618,11 +755,12 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 80,
+        marginBottom: 20,
+        marginTop: 10,
     },
     emptyCard: {
         width: SCREEN_WIDTH - 20,
-        height: SCREEN_HEIGHT * 0.78,
+        height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -632,10 +770,21 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    emptyIconInner: {
+        width: 72,
+        height: 72,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyRefreshButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     boosterButtonContainer: {
         position: 'absolute',
         right: 16,
-        bottom: 100,
+        bottom: 24, // Reduced from 100 as the screen now aligns with top of tab bar
         zIndex: 10,
     },
 });

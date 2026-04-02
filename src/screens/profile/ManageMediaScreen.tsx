@@ -165,11 +165,17 @@ const ManageMediaScreen: React.FC = () => {
             const fileName = uri.split('/').pop() || 'photo.jpg';
             const mimeType = fileName.endsWith('.png') ? 'image/png' : 'image/jpeg';
 
-            formData.append('photo', {
-                uri,
-                name: fileName,
-                type: mimeType,
-            } as unknown as Blob);
+            if (Platform.OS === 'web') {
+                const response = await fetch(uri);
+                const blob = await response.blob();
+                formData.append('photo', blob, fileName);
+            } else {
+                formData.append('photo', {
+                    uri,
+                    name: fileName,
+                    type: mimeType,
+                } as unknown as Blob);
+            }
             formData.append('isMain', String(photos.length === 0));
 
             const uploadedPhoto = await usersApi.uploadPhoto(formData);

@@ -19,7 +19,7 @@ import { shadows, specialShadows, darkShadows, ShadowStyle } from './shadows';
 // CONSTANTS
 // ============================================================================
 
-const THEME_STORAGE_KEY = '@minglr_theme_mode';
+const THEME_STORAGE_KEY = '@mingler_theme_mode';
 
 // ============================================================================
 // THEME CONTEXT TYPE
@@ -94,8 +94,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
                 if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
                     setMode(savedTheme as ThemeMode);
                 }
-            } catch (error) {
-                console.error('Failed to load theme preference:', error);
+            } catch {
+                // Silently fail — theme will use system default
             } finally {
                 setIsLoaded(true);
             }
@@ -112,8 +112,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         setMode(newMode);
         try {
             await AsyncStorage.setItem(THEME_STORAGE_KEY, newMode);
-        } catch (error) {
-            console.error('Failed to save theme preference:', error);
+        } catch {
+            // Silently fail — preference not persisted but UI still updates
         }
     };
 
@@ -121,8 +121,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         setMode(newMode);
         try {
             await AsyncStorage.setItem(THEME_STORAGE_KEY, newMode);
-        } catch (error) {
-            console.error('Failed to save theme preference:', error);
+        } catch {
+            // Silently fail
         }
     };
 

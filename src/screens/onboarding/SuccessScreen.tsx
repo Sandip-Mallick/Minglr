@@ -72,14 +72,11 @@ const SuccessScreen: React.FC = () => {
                 try {
                     const fileInfo = await FileSystem.getInfoAsync(uri);
                     fileExists = fileInfo.exists;
-                } catch (fileCheckError) {
-                    // On web, FileSystem may fail due to Jimp MIME error
-                    // Continue with upload attempt anyway
-                    console.warn('File check failed (common on web):', fileCheckError);
+                } catch {
+                    // On web, FileSystem may fail — continue with upload attempt
                 }
-
                 if (!fileExists) {
-                    console.warn('Photo file not found:', uri);
+                    // Photo file not found, skip it
                     continue;
                 }
 
@@ -98,8 +95,8 @@ const SuccessScreen: React.FC = () => {
 
                 const photo = await usersApi.uploadPhoto(formData);
                 uploadedPhotos.push(photo);
-            } catch (error) {
-                console.error(`Failed to upload photo ${i + 1}:`, error);
+            } catch {
+                // Failed to upload photo — skip it
             }
         }
 
@@ -145,7 +142,7 @@ const SuccessScreen: React.FC = () => {
             setUploadProgress('');
 
         } catch (error: any) {
-            console.error('Profile completion error:', error);
+            // Profile completion error
             Alert.alert(
                 'Error',
                 error.response?.data?.message || error.message || 'Failed to complete profile. Please try again.',

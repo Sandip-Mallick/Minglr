@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Minglr",
-    "slug": "minglr",
-    "scheme": "minglr",
+    "name": "Mingler",
+    "slug": "mingler",
+    "scheme": "mingler",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,11 +17,11 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.minglr.app",
+      "bundleIdentifier": "com.mingler.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Minglr needs camera access to take profile photos",
-        "NSPhotoLibraryUsageDescription": "Minglr needs photo library access to upload profile photos",
-        "NSLocationWhenInUseUsageDescription": "Minglr uses your location to find people near you"
+        "NSCameraUsageDescription": "mingler needs camera access to take profile photos",
+        "NSPhotoLibraryUsageDescription": "mingler needs photo library access to upload profile photos",
+        "NSLocationWhenInUseUsageDescription": "mingler uses your location to find people near you"
       }
     },
     "android": {
@@ -29,7 +29,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#d7305b"
       },
-      "package": "com.minglr.app",
+      "package": "com.mingler.app",
       "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA",
@@ -39,7 +39,8 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -51,11 +52,12 @@
       "expo-notifications",
       "expo-secure-store",
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {
-        "projectId": "8b717e9c-addb-484d-b3a3-ab2ce8678d38"
+        "projectId": "9637115e-0607-4bbc-b6de-10551f47c2ea"
       }
     }
   }

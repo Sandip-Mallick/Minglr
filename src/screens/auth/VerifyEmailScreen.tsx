@@ -8,6 +8,7 @@ import { usersApi } from '../../api/users';
 import { useAuthStore, useGemsStore } from '../../store';
 import firebaseAuth from '../../config/firebase';
 import { Ionicons } from '@expo/vector-icons';
+import { logger } from '../../utils/logger';
 
 const VerifyEmailScreen: React.FC = () => {
     const navigation = useNavigation();
@@ -97,7 +98,7 @@ const VerifyEmailScreen: React.FC = () => {
                 );
             }
         } catch (err: any) {
-            console.error('Verification check error:', err);
+            logger.error('Verification check error', err);
             Alert.alert('Error', err.message || 'Failed to verify email');
         } finally {
             setLoading(false);
@@ -109,7 +110,7 @@ const VerifyEmailScreen: React.FC = () => {
             await firebaseAuth.signOut();
             navigation.navigate('Login' as never);
         } catch (err) {
-            console.error('Sign out error:', err);
+            logger.error('Sign out error', err);
         }
     };
 

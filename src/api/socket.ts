@@ -1,10 +1,11 @@
 import { io, Socket } from 'socket.io-client';
 import { secureStorage } from '../utils/secureStorage';
 import { ChatMessage } from './chats';
+import { logger } from '../utils/logger';
 
 // Socket server URL - extract just the origin (protocol://host:port) from API URL
 // Fallback to production URL if env var is not set (safer for production builds)
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://minglr-backend.onrender.com/api/v1';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://mingler-backend.onrender.com/api/v1';
 // Parse URL to get just the origin without any path
 const getSocketUrl = (apiUrl: string): string => {
     try {
@@ -13,11 +14,11 @@ const getSocketUrl = (apiUrl: string): string => {
     } catch {
         // Fallback: strip everything after port (use production URL as default)
         const match = apiUrl.match(/^(https?:\/\/[^\/]+)/);
-        return match ? match[1] : 'https://minglr-backend.onrender.com';
+        return match ? match[1] : 'https://mingler-backend.onrender.com';
     }
 };
 const SOCKET_URL = getSocketUrl(API_BASE_URL);
-console.log('[Socket] Using socket URL:', SOCKET_URL);
+logger.info('[Socket] Using socket URL', SOCKET_URL);
 
 type MessageHandler = (data: { chatId: string; message: ChatMessage }) => void;
 type ReadHandler = (data: { chatId: string; readerId: string; readAt: string }) => void;
@@ -72,34 +73,34 @@ class SocketService {
         });
 
         this.socket.on('connect', () => {
-            console.log('[Socket] Connected! Socket ID:', this.socket?.id);
+            logger.info('[Socket] Connected', this.socket?.id);
             this.isConnecting = false;
             // Rejoin current chat if any
             if (this.currentChatId) {
-                console.log('[Socket] Rejoining chat room:', this.currentChatId);
+                logger.info('[Socket] Rejoining chat room', this.currentChatId);
                 this.joinChat(this.currentChatId);
             }
         });
 
         this.socket.on('disconnect', (reason) => {
-            console.log('[Socket] Disconnected:', reason);
+            logger.info('[Socket] Disconnected', reason);
             // Socket.io will auto-reconnect, no need to log or take action
         });
 
         this.socket.on('connect_error', (error) => {
-            console.log('[Socket] Connection error:', error.message);
+            logger.warn('[Socket] Connection error', error.message);
             this.isConnecting = false;
         });
 
         // Listen for new messages (when inside a chat)
         this.socket.on('new_message', (data: { chatId: string; message: ChatMessage }) => {
-            console.log('[Socket] Received new_message:', data.chatId, data.message._id);
+            logger.debug('[Socket] Received new_message', data.chatId);
             this.messageHandlers.forEach((handler) => handler(data));
         });
 
         // Listen for chat list updates (for chat list screen real-time updates)
         this.socket.on('chat_list_update', (data: { chatId: string; lastMessage: { content: string; createdAt: string; isFromMe: boolean } }) => {
-            console.log('[Socket] Received chat_list_update:', data.chatId);
+            logger.debug('[Socket] Received chat_list_update', data.chatId);
             this.chatListUpdateHandlers.forEach((handler) => handler(data));
         });
 
@@ -128,13 +129,13 @@ class SocketService {
      * Join a chat room to receive messages
      */
     joinChat(chatId: string): void {
-        console.log('[Socket] joinChat called for:', chatId, 'connected:', this.socket?.connected);
+        logger.debug('[Socket] joinChat called', { chatId, connected: this.socket?.connected });
         this.currentChatId = chatId;
         if (this.socket?.connected) {
-            console.log('[Socket] Emitting join_chat for:', chatId);
+            logger.debug('[Socket] Emitting join_chat', chatId);
             this.socket.emit('join_chat', chatId);
         } else {
-            console.log('[Socket] Not connected, will join on connect');
+            logger.debug('[Socket] Not connected, will join on connect');
         }
     }
 
@@ -196,6 +197,51 @@ class SocketService {
      */
     isConnected(): boolean {
         return this.socket?.connected || false;
+    }
+
+    // ─── Matchmaking Events ─────────────────────────────────────────────
+
+    /**
+     * Get the raw socket for advanced listeners (used by useMatchmaking)
+     */
+    getSocket(): Socket | null {
+        return this.socket;
+    }
+
+    /**
+     * Join the matchmaking queue
+     */
+    emitJoinMatchmaking(): void {
+        if (this.socket?.connected) {
+            this.socket.emit('join_matchmaking');
+        }
+    }
+
+    /**
+     * Leave the matchmaking queue
+     */
+    emitLeaveMatchmaking(): void {
+        if (this.socket?.connected) {
+            this.socket.emit('leave_matchmaking');
+        }
+    }
+
+    /**
+     * Accept a match
+     */
+    emitAcceptMatch(matchId: string): void {
+        if (this.socket?.connected) {
+            this.socket.emit('accept_match', { matchId });
+        }
+    }
+
+    /**
+     * Decline a match
+     */
+    emitDeclineMatch(matchId: string): void {
+        if (this.socket?.connected) {
+            this.socket.emit('decline_match', { matchId });
+        }
     }
 }
 

@@ -154,8 +154,8 @@ const AllFriendsScreen: React.FC = () => {
                     }).start();
                 }, 50);
             }
-        } catch (error) {
-            console.error('Failed to load friends:', error);
+        } catch {
+            // Silently fail
             setLoading(false);
         }
     }, []);
@@ -191,15 +191,13 @@ const AllFriendsScreen: React.FC = () => {
                 participantName: friend.name,
                 participantPhoto: friend.photos?.[0]?.url,
             });
-        } catch (error) {
-            console.error('Failed to open chat:', error);
+        } catch {
             Alert.alert('Error', 'Failed to open chat');
         }
     };
 
-    const handleRemoveFriend = (friendId: string) => {
+    const handleRemoveFriend = (_friendId: string) => {
         // TODO: Implement remove friend
-        console.log('Remove friend:', friendId);
     };
 
     const handleDiscover = () => {

@@ -10,6 +10,7 @@ import {
     Dimensions,
     ActivityIndicator,
     useWindowDimensions,
+    Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -51,18 +52,19 @@ const PhotoUploadScreen: React.FC = () => {
 
     const uploadPhoto = async (uri: string, isMain: boolean): Promise<string | null> => {
         try {
-            // Check if file exists
-            let fileExists = true;
-            try {
-                const fileInfo = await FileSystem.getInfoAsync(uri);
-                fileExists = fileInfo.exists;
-            } catch (fileCheckError) {
-                console.warn('File check failed (common on web):', fileCheckError);
-            }
+            // Check if file exists (skip on web as it throws)
+            if (Platform.OS !== 'web') {
+                let fileExists = true;
+                try {
+                    const fileInfo = await FileSystem.getInfoAsync(uri);
+                    fileExists = fileInfo.exists;
+                } catch {
+                    // Ignore
+                }
 
-            if (!fileExists) {
-                console.warn('Photo file not found:', uri);
-                return null;
+                if (!fileExists) {
+                    return null;
+                }
             }
 
             // Create form data
@@ -71,17 +73,24 @@ const PhotoUploadScreen: React.FC = () => {
             const match = /\.(\w+)$/.exec(filename);
             const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-            formData.append('photo', {
-                uri,
-                name: filename,
-                type,
-            } as any);
+            if (Platform.OS === 'web') {
+                const response = await fetch(uri);
+                const blob = await response.blob();
+                formData.append('photo', blob, filename);
+            } else {
+                formData.append('photo', {
+                    uri,
+                    name: filename,
+                    type,
+                } as any);
+            }
+            
             formData.append('isMain', isMain ? 'true' : 'false');
 
             const photo = await usersApi.uploadPhoto(formData);
             return photo.url;
-        } catch (error) {
-            console.error('Failed to upload photo:', error);
+        } catch {
+            // Upload failed
             return null;
         }
     };
@@ -232,7 +241,7 @@ const PhotoUploadScreen: React.FC = () => {
 
             // Success! AppNavigator will automatically navigate to main app
         } catch (error: any) {
-            console.error('Profile completion error:', error);
+            // Profile completion error
             Alert.alert(
                 'Error',
                 error.response?.data?.message || error.message || 'Failed to complete profile. Please try again.',

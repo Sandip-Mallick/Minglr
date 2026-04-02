@@ -1,5 +1,5 @@
 /**
- * MINGLR Design System - Color Palette
+ * mingler Design System - Color Palette
  * 
  * A comprehensive color system derived from the primary brand color #d03958
  * with carefully crafted light/dark themes for a premium dating app experience.

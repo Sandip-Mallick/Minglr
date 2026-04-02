@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { MainTabParamList } from './types';
 import { useTheme } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGemsStore, useAuthStore } from '../store';
 import { GemIcon, UserIcon } from '../components/Icons';
 import { gemsApi } from '../api/gems';
@@ -81,8 +82,8 @@ const AnimatedGemsDisplay: React.FC<{ onPress: () => void }> = ({ onPress }) => 
                     referralCode: balance.referralCode,
                     referralCount: balance.referralCount,
                 });
-            } catch (error) {
-                console.error('Failed to fetch gems balance:', error);
+            } catch {
+                // Silently fail \u2014 gems will show stale data
             }
         };
 
@@ -160,6 +161,17 @@ const AnimatedGemsDisplay: React.FC<{ onPress: () => void }> = ({ onPress }) => 
 
 export const MainTabNavigator: React.FC = () => {
     const { colors, primaryColor } = useTheme();
+    const insets = useSafeAreaInsets();
+    
+    // Dynamically calculate sizing to preserve a slim, standard look
+    // Provide a minimum padding of 10 if there are no system insets (e.g. legacy devices).
+    // If system insets exist, apply just the inset plus a tiny sliver (e.g., 4) to stop clipping, 
+    // rather than full base padding, which creates a massive double-height bar.
+    const paddingBottom = insets.bottom > 0 ? insets.bottom + 4 : 10;
+    
+    // Core tab UI height (icons and labels)
+    const CORE_TAB_UI_HEIGHT = 54;
+    const tabHeight = CORE_TAB_UI_HEIGHT + paddingBottom;
 
     return (
         <Tab.Navigator
@@ -172,9 +184,9 @@ export const MainTabNavigator: React.FC = () => {
                 tabBarStyle: {
                     backgroundColor: colors.tabBar,
                     borderTopColor: colors.border,
-                    height: 70,
-                    paddingBottom: 12,
-                    paddingTop: 2,
+                    height: tabHeight,
+                    paddingBottom: paddingBottom,
+                    paddingTop: 6,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,
@@ -205,15 +217,6 @@ export const MainTabNavigator: React.FC = () => {
                 options={{
                     title: 'Discover',
                     headerShown: false,
-                    tabBarStyle: {
-                        backgroundColor: 'transparent',
-                        borderTopWidth: 0,
-                        position: 'absolute',
-                        height: 70,
-                        paddingBottom: 12,
-                        paddingTop: 2,
-                        elevation: 0,
-                    },
                 }}
             />
             <Tab.Screen

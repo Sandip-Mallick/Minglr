@@ -1,32 +1,21 @@
-import { useEffect, useState } from 'react';
-import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
+import { useState, useCallback, useEffect } from 'react';
+import { Platform } from 'react-native';
+import { GoogleSignin, isErrorWithCode, statusCodes } from '@react-native-google-signin/google-signin';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { authApi } from '../api/auth';
 import { usersApi } from '../api/users';
 import { secureStorage } from '../utils/secureStorage';
 import { useAuthStore, useGemsStore } from '../store';
+import { getApiErrorMessage, isNetworkError, getNetworkErrorMessage } from '../utils/errorMessages';
+import { firebaseAuth, auth } from '../config/firebase';
 
-// Complete auth session for web
-WebBrowser.maybeCompleteAuthSession();
-
-// Google OAuth client IDs
-const GOOGLE_WEB_CLIENT_ID = '259971691056-unt1qitb70idvg9kvh3fg0of7i6c4nnq.apps.googleusercontent.com';
-const GOOGLE_ANDROID_CLIENT_ID = '259971691056-i0pqanv84lj05mn98tui850e1gu3rg32.apps.googleusercontent.com';
-
-// Generate the redirect URI for the current platform
-const redirectUri = makeRedirectUri({
-    scheme: 'minglr',
-});
-
-// Log redirect URI on load
-console.log('🔗 REDIRECT URI:', redirectUri);
+// Google OAuth web client ID for identifying the backend environment
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
 interface UseGoogleAuthResult {
     signInWithGoogle: () => Promise<void>;
     loading: boolean;
     error: string | null;
-    redirectUri: string;
 }
 
 export const useGoogleAuth = (): UseGoogleAuthResult => {
@@ -35,96 +24,117 @@ export const useGoogleAuth = (): UseGoogleAuthResult => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Configure Google OAuth request with platform-specific client IDs
-    const [request, response, promptAsync] = Google.useAuthRequest({
-        clientId: GOOGLE_WEB_CLIENT_ID,
-        webClientId: GOOGLE_WEB_CLIENT_ID,
-        androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-        redirectUri: redirectUri,
-        scopes: ['openid', 'profile', 'email'],
-    });
-
-    // Handle OAuth response
+    // Ensure Google Sign-In is configured on mount for Native
     useEffect(() => {
-        if (response?.type === 'success') {
-            const { authentication } = response;
-            console.log('Google OAuth response:', {
-                hasIdToken: !!authentication?.idToken,
-                hasAccessToken: !!authentication?.accessToken
+        if (Platform.OS !== 'web') {
+            GoogleSignin.configure({
+                webClientId: GOOGLE_WEB_CLIENT_ID,
+                offlineAccess: false,
             });
-            handleGoogleAuthSuccess(authentication?.accessToken);
-        } else if (response?.type === 'error') {
-            console.error('Google OAuth error:', response.error);
-            setError(response.error?.message || 'Google Sign-In failed');
-            setLoading(false);
-        } else if (response?.type === 'dismiss') {
-            setLoading(false);
         }
-    }, [response]);
+    }, []);
 
-    const handleGoogleAuthSuccess = async (accessToken: string | undefined) => {
-        if (!accessToken) {
-            setError('No access token received from Google');
-            setLoading(false);
-            return;
-        }
+    const signInWithGoogle = useCallback(async () => {
+        setLoading(true);
+        setError(null);
 
         try {
-            console.log('Authenticating with server using Google access token...');
+            let firebaseIdToken: string | null = null;
 
-            // Call our server's /auth/google endpoint
-            const authResponse = await authApi.googleAuth(accessToken);
+            if (Platform.OS === 'web') {
+                // --- WEB FLOW ---
+                // Native libraries like Google Play Services don't exist on the web. 
+                // We use standard Firebase Web Auth popups instead.
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                // After successful web login, grab the secure Firebase session token
+                firebaseIdToken = await result.user.getIdToken();
+                
+                if (!firebaseIdToken) {
+                    throw new Error('Failed to generate secure Firebase session token on web.');
+                }
+            } else {
+                // --- NATIVE (iOS/Android) FLOW ---
+                // Initiate the native Google Sign-In OS prompt
+                await GoogleSignin.hasPlayServices();
+                const userInfo = await GoogleSignin.signIn();
 
-            console.log('Server auth response:', authResponse);
+                // Extract native Google ID token
+                const idToken = userInfo.data?.idToken;
 
-            // Store tokens
+                if (!idToken) {
+                    throw new Error('No ID token obtained from Google Sign-In');
+                }
+
+                // Authenticate with Firebase locally on the mobile client
+                await firebaseAuth.signInWithGoogle(idToken);
+
+                // Fetch a fresh unified Firebase Session token
+                firebaseIdToken = await firebaseAuth.getIdToken();
+                
+                if (!firebaseIdToken) {
+                    throw new Error("Failed to generate secure Firebase session token.");
+                }
+            }
+
+            // Synchronize unified session token with our robust backend router
+            const authResponse = await authApi.sync(firebaseIdToken);
+
+            // Store custom JWT tokens generated by MongoDB backend
             await secureStorage.setItemAsync('accessToken', authResponse.tokens.accessToken);
             await secureStorage.setItemAsync('refreshToken', authResponse.tokens.refreshToken);
 
-            // Get full user profile
+            // Load complete DB profile
             const userProfile = await usersApi.getMe();
 
-            // Update auth store
+            // Store unified auth profile locally in Zustand global state
             await setAuth(
                 userProfile,
                 authResponse.tokens.accessToken,
                 authResponse.tokens.refreshToken
             );
 
-            // Sync gems
+            // Sync app state elements like Gems
             syncFromUser(userProfile);
 
             setError(null);
-            console.log('Google Sign-In successful!');
         } catch (err: any) {
-            console.error('Google auth error:', err);
-            setError(err.message || 'Authentication failed');
+            // Handle Native-Specific Errors
+            if (Platform.OS !== 'web' && isErrorWithCode(err)) {
+                switch (err.code) {
+                    case statusCodes.SIGN_IN_CANCELLED:
+                        // User gently tapped out
+                        setError(null); 
+                        break;
+                    case statusCodes.IN_PROGRESS:
+                        setError('Sign in is already in progress');
+                        break;
+                    case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+                        setError('Google Play Services is not available or outdated.');
+                        break;
+                    default:
+                        setError('Google Sign-In failed. ' + (err.message || ''));
+                }
+            // Handle Web-Specific Firebase Auth popup errors
+            } else if (err.code === 'auth/popup-closed-by-user') {
+                setError(null); // User closed popup
+            } else if (isNetworkError(err)) {
+                setError(getNetworkErrorMessage(err));
+            } else if (err.response?.status === 409 && err.response?.data?.error === 'AUTH_PROVIDER_CONFLICT') {
+                setError(err.response.data.message || 'This email is already registered with a different sign-in method.');
+            } else {
+                setError(getApiErrorMessage(err) || 'An unexpected error occurred during Google Sign-In.');
+            }
         } finally {
             setLoading(false);
         }
-    };
-
-    const signInWithGoogle = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            await promptAsync();
-        } catch (err: any) {
-            console.error('Google prompt error:', err);
-            setError(err.message || 'Failed to start Google Sign-In');
-            setLoading(false);
-        }
-    };
+    }, [setAuth, syncFromUser]);
 
     return {
         signInWithGoogle,
         loading,
         error,
-        redirectUri,
     };
 };
 
 export default useGoogleAuth;
-
-

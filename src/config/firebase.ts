@@ -16,6 +16,7 @@ import {
     getReactNativePersistence,
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logger } from '../utils/logger';
 
 // Firebase configuration from environment variables
 // These are set in eas.json for builds and can be overridden locally
@@ -34,7 +35,7 @@ if (__DEV__) {
         .filter(([_, value]) => !value)
         .map(([key]) => key);
     if (missingKeys.length > 0) {
-        console.warn('[Firebase] Missing config keys:', missingKeys.join(', '));
+        logger.warn('[Firebase] Missing config keys', missingKeys.join(', '));
     }
 }
 

@@ -1,5 +1,5 @@
 /**
- * MINGLR Design System - Typography
+ * mingler Design System - Typography
  * 
  * A comprehensive type scale with proper line heights, letter spacing,
  * and font weights for a premium dating app experience.

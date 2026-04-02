@@ -121,7 +121,7 @@ const EditProfileScreen: React.FC = () => {
     };
 
     const handleInterestsPress = () => {
-        console.log('Open interests picker');
+        // TODO: Open interests picker
     };
 
     const handlePreferencesPress = () => {

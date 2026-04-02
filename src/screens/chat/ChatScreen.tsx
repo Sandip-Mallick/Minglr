@@ -136,9 +136,8 @@ const ChatScreen: React.FC = () => {
 
         // Listen for read receipts
         const unsubRead = socketService.onMessagesRead((data) => {
-            console.log('[ChatScreen] Received messages_read:', data.chatId, 'by:', data.readerId, 'current user:', user?._id);
             if (data.chatId === chatId && data.readerId !== user?._id) {
-                console.log('[ChatScreen] Updating messages as read');
+                // Update all messages as read
                 // Update all messages as read
                 setMessages((prev) =>
                     prev.map((m) =>
@@ -225,9 +224,8 @@ const ChatScreen: React.FC = () => {
             setMessages(newMessages);
             setHasMore(response.pagination?.hasNext ?? true);
             setCachedMessages(chatId, newMessages, response.pagination?.hasNext ?? true);
-        } catch (error) {
-            // Silently fail - we already have cached data displayed
-            console.log('Background sync failed, keeping cached messages');
+        } catch {
+            // Silently fail — cached data already displayed
         }
     };
 
@@ -245,8 +243,8 @@ const ChatScreen: React.FC = () => {
 
             // Cache the messages
             setCachedMessages(chatId, newMessages, response.pagination?.hasNext ?? true);
-        } catch (error) {
-            console.log('No messages yet or chat is new');
+        } catch {
+            // No messages yet or chat is new
             setMessages([]);
             setHasMore(false);
         } finally {
@@ -285,8 +283,8 @@ const ChatScreen: React.FC = () => {
             } else {
                 setHasMore(false);
             }
-        } catch (error) {
-            console.log('Failed to load more messages');
+        } catch {
+            // Failed to load more — keep existing messages
         } finally {
             setLoadingMore(false);
         }
@@ -347,7 +345,7 @@ const ChatScreen: React.FC = () => {
             // CRITICAL: Also remove from cache
             removeMessageFromCache(chatId, tempMessage._id);
 
-            console.error('Failed to send message:', error);
+            // Send failure is handled by removing temp message
         } finally {
             setSending(false);
         }
@@ -414,8 +412,7 @@ const ChatScreen: React.FC = () => {
                 onlineStatus: { isOnline: isOnline || false, lastActiveAt: lastActiveAt || '' },
             });
             setShowProfileModal(true);
-        } catch (error) {
-            console.error('Failed to load user profile:', error);
+        } catch {
             // Fallback: show modal with basic info from route params
             setProfileUser({
                 _id: participantId,

@@ -1,5 +1,5 @@
 /**
- * MINGLR Design System - Spacing
+ * mingler Design System - Spacing
  * 
  * An 8pt grid system for consistent spacing throughout the app.
  * All spacing values are multiples of 4 for pixel-perfect alignment.

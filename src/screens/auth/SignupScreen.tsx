@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,8 @@ import { Input } from '../../components/common/Input';
 import { GoogleLogo } from '../../components/common/GoogleLogo';
 import { useGoogleAuth } from '../../hooks/useGoogleAuth';
 import firebaseAuth from '../../config/firebase';
+import { validateEmail, validatePassword, getPasswordStrength, sanitizeInput } from '../../utils/validation';
+import { getUserFriendlyError } from '../../utils/errorMessages';
 
 const SignupScreen: React.FC = () => {
     const navigation = useNavigation();
@@ -28,25 +30,29 @@ const SignupScreen: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // Password strength indicator
+    const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
+    const showStrength = password.length > 0;
+
     const handleSignup = async () => {
-        if (!email || !password || !confirmPassword) {
-            setError('Please fill in all fields');
+        // Validate email
+        const trimmedEmail = sanitizeInput(email);
+        const emailResult = validateEmail(trimmedEmail);
+        if (!emailResult.isValid) {
+            setError(emailResult.error!);
             return;
         }
 
+        // Validate password strength
+        const passwordResult = validatePassword(password);
+        if (!passwordResult.isValid) {
+            setError(passwordResult.error!);
+            return;
+        }
+
+        // Confirm password match
         if (password !== confirmPassword) {
             setError('Passwords do not match');
-            return;
-        }
-
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters');
-            return;
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError('Please enter a valid email address');
             return;
         }
 
@@ -54,7 +60,7 @@ const SignupScreen: React.FC = () => {
         setError('');
 
         try {
-            const user = await firebaseAuth.signUpWithEmail(email, password);
+            await firebaseAuth.signUpWithEmail(trimmedEmail, password);
 
             Alert.alert(
                 'Verification Email Sent',
@@ -67,17 +73,12 @@ const SignupScreen: React.FC = () => {
                 ]
             );
         } catch (err: any) {
-            console.error('Signup error:', err);
+            // Check for specific conflict: email already used by Google account
             if (err.code === 'auth/email-already-in-use') {
-                setError('An account with this email already exists');
-            } else if (err.code === 'auth/invalid-email') {
-                setError('Invalid email address');
-            } else if (err.code === 'auth/weak-password') {
-                setError('Password is too weak. Use at least 6 characters');
-            } else if (err.code === 'auth/operation-not-allowed') {
-                setError('Email/password accounts are not enabled. Please contact support.');
+                // Show specific message suggesting Google login
+                setError('An account with this email already exists. If you signed up with Google, please use "Continue with Google" instead.');
             } else {
-                setError(err.message || 'Signup failed. Please try again.');
+                setError(getUserFriendlyError(err));
             }
         } finally {
             setLoading(false);
@@ -105,7 +106,7 @@ const SignupScreen: React.FC = () => {
                         typography.bodyLarge,
                         { color: colors.textSecondary, marginTop: spacing.sm }
                     ]}>
-                        Join Minglr and start connecting
+                        Join mingler and start connecting
                     </Text>
                 </View>
 
@@ -131,11 +132,59 @@ const SignupScreen: React.FC = () => {
                             setPassword(text);
                             setError('');
                         }}
-                        placeholder="Create a password"
+                        placeholder="Create a strong password"
                         secureTextEntry
                         showPasswordToggle
                         autoComplete="password-new"
                     />
+
+                    {/* Password Strength Indicator */}
+                    {showStrength && (
+                        <View style={[styles.strengthContainer, { marginBottom: spacing.md }]}>
+                            <View style={styles.strengthBarContainer}>
+                                {[0, 1, 2, 3].map((i) => (
+                                    <View
+                                        key={i}
+                                        style={[
+                                            styles.strengthBar,
+                                            {
+                                                backgroundColor: i < passwordStrength.score
+                                                    ? passwordStrength.color
+                                                    : colors.border,
+                                                marginRight: i < 3 ? 4 : 0,
+                                            }
+                                        ]}
+                                    />
+                                ))}
+                            </View>
+                            <Text style={[
+                                typography.caption,
+                                { color: passwordStrength.color, marginLeft: spacing.sm }
+                            ]}>
+                                {passwordStrength.label}
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Password requirements hint */}
+                    {showStrength && passwordStrength.score < 4 && (
+                        <View style={[
+                            styles.hintContainer,
+                            {
+                                backgroundColor: `${colors.info}08`,
+                                borderRadius: borderRadius.md,
+                                padding: spacing.sm,
+                                marginBottom: spacing.md,
+                            }
+                        ]}>
+                            <Text style={[typography.caption, { color: colors.textMuted, lineHeight: 18 }]}>
+                                {!passwordStrength.checks.minLength && '• At least 8 characters\n'}
+                                {!passwordStrength.checks.hasUppercase && '• 1 uppercase letter\n'}
+                                {!passwordStrength.checks.hasNumber && '• 1 number\n'}
+                                {!passwordStrength.checks.hasSpecial && '• 1 special character (!@#$...)'}
+                            </Text>
+                        </View>
+                    )}
 
                     <Input
                         label="Confirm Password"
@@ -255,6 +304,21 @@ const styles = StyleSheet.create({
     },
     form: {},
     errorContainer: {},
+    strengthContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: -4,
+    },
+    strengthBarContainer: {
+        flexDirection: 'row',
+        flex: 1,
+    },
+    strengthBar: {
+        flex: 1,
+        height: 4,
+        borderRadius: 2,
+    },
+    hintContainer: {},
     divider: {
         flexDirection: 'row',
         alignItems: 'center',

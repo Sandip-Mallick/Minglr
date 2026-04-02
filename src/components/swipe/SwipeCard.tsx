@@ -23,6 +23,7 @@ import Animated, {
     useAnimatedReaction,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme';
 import { countries, Country } from '../../utils/countries';
 import { LetterIcon } from '../Icons';
@@ -30,7 +31,7 @@ import { LetterIcon } from '../Icons';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_MARGIN = 10;
 const CARD_WIDTH = SCREEN_WIDTH - CARD_MARGIN * 2;
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.78; // Larger card - 82% of screen height
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.75; // 75% of screen height
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 interface Photo {
@@ -218,8 +219,8 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
                                 resizeMode="cover"
                             />
                         ) : (
-                            <View style={[styles.photo, { backgroundColor: colors.surface }]}>
-                                <Ionicons name="person" size={64} color={colors.textMuted} />
+                            <View style={[styles.photo, { backgroundColor: '#000000' }]}>
+                                <Ionicons name="person" size={64} color="rgba(255,255,255,0.4)" />
                             </View>
                         )}
 
@@ -253,10 +254,17 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
                             activeOpacity={1}
                         />
 
+                        {/* Gradient for high contrast text readability */}
+                        <LinearGradient
+                            colors={['rgba(0,0,0,0.85)', 'rgba(0,0,0,0.4)', 'transparent']}
+                            locations={[0, 0.6, 1]}
+                            style={styles.topGradient}
+                        />
+
                         {/* User info - Top left */}
                         <View style={styles.userInfo}>
                             <View style={styles.nameRow}>
-                                <Text style={styles.userName}>{user.name}</Text>
+                                <Text style={styles.userName} numberOfLines={1}>@{user.name}</Text>
                                 {user.onlineStatus?.isOnline && (
                                     <View style={styles.onlineIndicator} />
                                 )}
@@ -375,12 +383,14 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        width: '100%',
+        height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
     },
     card: {
-        width: CARD_WIDTH,
-        height: CARD_HEIGHT,
+        width: '100%',
+        height: '100%',
         borderRadius: 20,
         overflow: 'hidden',
         shadowColor: '#000',
@@ -393,6 +403,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         position: 'relative',
+        backgroundColor: '#000000',
     },
     photo: {
         width: '100%',
@@ -427,23 +438,35 @@ const styles = StyleSheet.create({
         bottom: 80,
         width: '40%',
     },
+    topGradient: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 140,
+        zIndex: 1,
+    },
     userInfo: {
         position: 'absolute',
-        top: 28,
-        left: 16,
+        top: 24,
+        left: 20,
+        right: 60, // Space for report button
+        zIndex: 2,
     },
     nameRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
+        maxWidth: '100%',
     },
     userName: {
-        fontSize: 26,
-        fontWeight: 'bold',
+        fontSize: 28, // Slightly larger for better hierarchy
+        fontWeight: '800', // Extra bold to pop
         color: '#FFFFFF',
-        textShadowColor: 'rgba(0,0,0,0.5)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 3,
+        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
+        flexShrink: 1, // Prevent overflow if name is long
     },
     onlineIndicator: {
         width: 10,
@@ -474,14 +497,15 @@ const styles = StyleSheet.create({
     },
     reportButton: {
         position: 'absolute',
-        top: 28,
+        top: 24, // Aligned with userInfo
         right: 16,
-        width: 36,
-        height: 36,
-        borderRadius: 8,
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(0,0,0,0.4)',
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 2,
     },
     overlay: {
         position: 'absolute',

@@ -1,5 +1,5 @@
 /**
- * MINGLR Design System - Shadows & Elevation
+ * mingler Design System - Shadows & Elevation
  * 
  * Consistent elevation system for depth and hierarchy.
  * Optimized for both iOS and Android.

@@ -49,8 +49,8 @@ const GemsBoostersScreen: React.FC = () => {
         try {
             const data = await boostersApi.getPricing();
             setPricing(data);
-        } catch (error) {
-            console.error('Failed to load pricing:', error);
+        } catch {
+            // Silently fail
         }
     };
 
@@ -64,8 +64,8 @@ const GemsBoostersScreen: React.FC = () => {
                 referralCode: balance.referralCode,
                 referralCount: balance.referralCount,
             });
-        } catch (error) {
-            console.error('Failed to refresh balance:', error);
+        } catch {
+            // Silently fail
         }
     };
 
@@ -73,8 +73,8 @@ const GemsBoostersScreen: React.FC = () => {
         try {
             const status = await gemsApi.getReferralStatus();
             setReferralStatus(status);
-        } catch (error) {
-            console.error('Failed to load referral status:', error);
+        } catch {
+            // Silently fail
             // Fallback to local calculation
             setReferralStatus({
                 currentProgress: referralCount % 5,
@@ -112,21 +112,21 @@ const GemsBoostersScreen: React.FC = () => {
     const handleShareInvite = async () => {
         try {
             const inviteData = await gemsApi.getInviteLink();
-            const message = `Join me on Minglr! Use my invite link to sign up and we both get rewarded! 🎉\n\n${inviteData.inviteUrl}`;
+            const message = `Join me on mingler! Use my invite link to sign up and we both get rewarded! 🎉\n\n${inviteData.inviteUrl}`;
 
             await Share.share({
                 message,
-                title: 'Invite to Minglr',
+                title: 'Invite to mingler',
             });
         } catch (error) {
             // Fallback if API fails, use local referral code
-            const fallbackUrl = `https://minglr.app/invite/${referralCode}`;
-            const message = `Join me on Minglr! Use my invite link to sign up and we both get rewarded! 🎉\n\n${fallbackUrl}`;
+            const fallbackUrl = `https://mingler.app/invite/${referralCode}`;
+            const message = `Join me on mingler! Use my invite link to sign up and we both get rewarded! 🎉\n\n${fallbackUrl}`;
 
             try {
                 await Share.share({
                     message,
-                    title: 'Invite to Minglr',
+                    title: 'Invite to mingler',
                 });
             } catch (shareError) {
                 Alert.alert('Error', 'Could not share invite link');

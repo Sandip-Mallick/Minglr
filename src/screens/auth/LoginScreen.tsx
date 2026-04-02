@@ -21,6 +21,8 @@ import { authApi } from '../../api/auth';
 import { usersApi } from '../../api/users';
 import { useAuthStore, useGemsStore } from '../../store';
 import firebaseAuth from '../../config/firebase';
+import { validateEmail, sanitizeInput } from '../../utils/validation';
+import { getUserFriendlyError, isNetworkError, getNetworkErrorMessage } from '../../utils/errorMessages';
 
 const LoginScreen: React.FC = () => {
     const navigation = useNavigation();
@@ -35,8 +37,16 @@ const LoginScreen: React.FC = () => {
     const [error, setError] = useState('');
 
     const handleLogin = async () => {
-        if (!email || !password) {
-            setError('Please fill in all fields');
+        // Input validation
+        const trimmedEmail = sanitizeInput(email);
+        const emailResult = validateEmail(trimmedEmail);
+        if (!emailResult.isValid) {
+            setError(emailResult.error!);
+            return;
+        }
+
+        if (!password) {
+            setError('Password is required');
             return;
         }
 
@@ -44,7 +54,7 @@ const LoginScreen: React.FC = () => {
         setError('');
 
         try {
-            const user = await firebaseAuth.signInWithEmail(email, password);
+            const user = await firebaseAuth.signInWithEmail(trimmedEmail, password);
 
             if (!user.emailVerified) {
                 navigation.navigate('VerifyEmail' as never);
@@ -72,30 +82,20 @@ const LoginScreen: React.FC = () => {
             syncFromUser(userProfile);
 
         } catch (err: any) {
-            console.error('Login error:', err);
-
-            if (err.message === 'Network Error' || err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK') {
-                setError('Cannot connect to server. Please check your internet connection and try again.');
+            // Network errors
+            if (isNetworkError(err)) {
+                setError(getNetworkErrorMessage(err));
                 return;
             }
 
-            if (err.code === 'auth/invalid-email') {
-                setError('Invalid email address');
-            } else if (err.code === 'auth/user-not-found') {
-                setError('No account found with this email');
-            } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-                setError('Incorrect email or password');
-            } else if (err.code === 'auth/too-many-requests') {
-                setError('Too many attempts. Please try again later');
-            } else if (err.code === 'auth/network-request-failed') {
-                setError('Network error. Please check your internet connection.');
-            } else if (err.response?.status === 401) {
-                setError('Authentication failed. Please try again.');
-            } else if (err.response?.status >= 500) {
-                setError('Server error. Please try again later.');
-            } else {
-                setError(err.message || 'Login failed. Please try again.');
+            // Auth provider conflict (email user trying to sync but was Google)
+            if (err.response?.status === 409 && err.response?.data?.error === 'AUTH_PROVIDER_CONFLICT') {
+                setError(err.response.data.message || 'This account uses a different sign-in method.');
+                return;
             }
+
+            // Firebase / generic errors — use centralized mapper
+            setError(getUserFriendlyError(err));
         } finally {
             setLoading(false);
         }
@@ -106,19 +106,26 @@ const LoginScreen: React.FC = () => {
     };
 
     const handleForgotPassword = async () => {
-        if (!email) {
+        const trimmedEmail = sanitizeInput(email);
+        if (!trimmedEmail) {
             Alert.alert('Email Required', 'Please enter your email address first');
             return;
         }
 
+        const emailResult = validateEmail(trimmedEmail);
+        if (!emailResult.isValid) {
+            Alert.alert('Invalid Email', emailResult.error!);
+            return;
+        }
+
         try {
-            await firebaseAuth.sendPasswordReset(email);
+            await firebaseAuth.sendPasswordReset(trimmedEmail);
             Alert.alert(
                 'Password Reset Sent',
                 'Check your email for a password reset link'
             );
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to send reset email');
+            Alert.alert('Error', getUserFriendlyError(err));
         }
     };
 
@@ -137,7 +144,7 @@ const LoginScreen: React.FC = () => {
                 {/* Logo */}
                 <View style={styles.logoContainer}>
                     <Image
-                        source={require('../../../assets/Logo/Minglr.png')}
+                        source={require('../../../assets/Logo/mingler.png')}
                         style={styles.logoImage}
                         resizeMode="contain"
                     />

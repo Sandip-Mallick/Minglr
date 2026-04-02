@@ -44,8 +44,8 @@ const RequestScreen: React.FC = () => {
             ]);
             setRequests(requestsData.data);
             setRecentFriends(friendsData);
-        } catch (error) {
-            console.error('Failed to load data:', error);
+        } catch {
+            // Silently fail
         } finally {
             setLoading(false);
         }
@@ -61,8 +61,8 @@ const RequestScreen: React.FC = () => {
             await friendsApi.acceptRequest(requestId);
             setRequests(requests.filter((r) => r._id !== requestId));
             loadData();
-        } catch (error) {
-            console.error('Failed to accept:', error);
+        } catch {
+            // Silently fail
         }
     };
 
@@ -70,8 +70,8 @@ const RequestScreen: React.FC = () => {
         try {
             await friendsApi.rejectRequest(requestId);
             setRequests(requests.filter((r) => r._id !== requestId));
-        } catch (error) {
-            console.error('Failed to reject:', error);
+        } catch {
+            // Silently fail
         }
     };
 
@@ -83,8 +83,7 @@ const RequestScreen: React.FC = () => {
                 participantName: friend.name,
                 participantPhoto: friend.photos?.[0]?.url,
             });
-        } catch (error) {
-            console.error('Failed to open chat:', error);
+        } catch {
             Alert.alert('Error', 'Failed to open chat');
         }
     };
@@ -154,8 +153,8 @@ const RequestScreen: React.FC = () => {
                     pendingRequestId: request._id,
                     initialMessage: request.message,
                 });
-            } catch (error) {
-                console.error('Failed to open chat:', error);
+            } catch {
+                // Failed to open chat
             }
         }
     };
