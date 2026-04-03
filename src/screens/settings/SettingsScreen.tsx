@@ -27,7 +27,7 @@ const URLS = {
 };
 
 // Dynamic app version from app.json / Constants
-const APP_VERSION = Constants.expoConfig?.version ?? Constants.manifest?.version ?? '1.0.0';
+const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 // Android OS version from the device
 const ANDROID_VERSION = Platform.OS === 'android' ? `${Platform.Version}` : null;
 const SUPPORT_EMAIL = 'minglersupport@gmail.com';

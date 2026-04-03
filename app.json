@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mingler.app",
+      "bundleIdentifier": "com.origanodev.mingler",
       "infoPlist": {
         "NSCameraUsageDescription": "mingler needs camera access to take profile photos",
         "NSPhotoLibraryUsageDescription": "mingler needs photo library access to upload profile photos",
@@ -29,7 +29,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#d7305b"
       },
-      "package": "com.mingler.app",
+      "package": "com.origanodev.mingler",
       "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA",
@@ -57,8 +57,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "9637115e-0607-4bbc-b6de-10551f47c2ea"
+        "projectId": "17393fcd-854d-4fec-a44a-93c60a014449"
       }
-    }
+    },
+    "owner": "louisaswift2"
   }
 }

@@ -34,7 +34,7 @@
                 "EXPO_PUBLIC_FIREBASE_APP_ID": "1:7132256653:web:2ce825c61d31aac29985c4"
             },
             "android": {
-                "buildType": "apk"
+                "buildType": "app-bundle"
             }
         }
     },

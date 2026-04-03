@@ -7,18 +7,26 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:7132256653:android:367471b22ecc98c89985c4",
+        "mobilesdk_app_id": "1:7132256653:android:7df948066e8939e49985c4",
         "android_client_info": {
-          "package_name": "com.mingler.app"
+          "package_name": "com.origanodev.mingler"
         }
       },
       "oauth_client": [
         {
-          "client_id": "7132256653-cf4kj4sl5rjlhkuk20qa2j3bp3vel6tj.apps.googleusercontent.com",
+          "client_id": "7132256653-0ahpkckrbesjl53e6dlcg13v111fp705.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.mingler.app",
-            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+            "package_name": "com.origanodev.mingler",
+            "certificate_hash": "f4f702fdc3a6f5f893707fca6ae4999fc9af5504"
+          }
+        },
+        {
+          "client_id": "7132256653-u68l2u6gm8nfnmh3spmcsmv0hi82ub4a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.origanodev.mingler",
+            "certificate_hash": "5d1d61caebf0c095405ec85566e5eaaf0cb24508"
           }
         },
         {

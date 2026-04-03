@@ -12,5 +12,10 @@ local.properties
 *.hprof
 .cxx/
 
+# Signing secrets
+keystore.properties
+*.keystore
+*.jks
+
 # Bundle artifacts
 *.jsbundle
