@@ -20,10 +20,10 @@ import { useAuthStore } from '../../store';
 
 // URLs for legal pages
 const URLS = {
-    TERMS: 'https://mingler-privacy.netlify.app/terms',
-    PRIVACY: 'https://mingler-privacy.netlify.app/',
-    COMMUNITY: 'https://mingler-privacy.netlify.app/community',
-    DELETE_ACCOUNT: 'https://mingler-privacy.netlify.app/delete-account',
+    TERMS: 'https://mingler-origanodev.netlify.app/terms',
+    PRIVACY: 'https://mingler-origanodev.netlify.app/privacy',
+    COMMUNITY: 'https://mingler-origanodev.netlify.app/community',
+    DELETE_ACCOUNT: 'https://mingler-origanodev.netlify.app/delete-account',
 };
 
 // Dynamic app version from app.json / Constants
